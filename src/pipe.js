@@ -28,6 +28,7 @@ function Pipe(number, X, Y)
   this.image.src = "assets/pipes.png";
   this.start = false;
   this.end = false;
+  this.distanceFromRoot = 0;
 
   if (upLarge.includes(this.num)) {this.up = "large";}
   if (downLarge.includes(this.num)) {this.down = "large";}
