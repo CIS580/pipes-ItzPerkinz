@@ -45,5 +45,6 @@ The bundle will automatically be re-created every time you change a source file.
 
 ## Credits
 Pipe tiles by surt, and released into the public domain on [OpenGameArt.com](http://opengameart.org/content/plums)
+filledPipes.png is just pipes.png that I edited with Paint
 
 Game framework HTML5/CSS3/Javascirpt code was written by course instructor [Nathan Bean](http://nathanhbean.com), and also released under the [CC-A-SA 3.0 License](https://creativecommons.org/licenses/by-sa/3.0/)
