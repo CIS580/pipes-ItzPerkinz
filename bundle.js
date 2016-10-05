@@ -104,6 +104,7 @@ canvas.onclick = function(event) {
       connect(temp1);
       //console.log(temp1);
       }
+    printWaterWay(connectedPipes);
 }
 
 // Right click
@@ -122,7 +123,7 @@ canvas.oncontextmenu = function(event)
     var temp2 = board[boardSlot].pipe;
     var newPipe = rotatePipe(temp2);
     newPipe.distanceFromRoot = 1000;
-    board[boardSlot].pipe = newPipe;
+
 
     // cut connections and update the connectedPipes list
     if (connectedPipes.includes(temp2)) {  cutConnections(temp2); }
@@ -131,6 +132,8 @@ canvas.oncontextmenu = function(event)
     var index = pipes.indexOf(temp2);
     pipes[index] = newPipe;
     connect(newPipe);
+    board[boardSlot].pipe = newPipe;
+    printWaterWay(connectedPipes);
     //console.log(newPipe);
   }
 
@@ -245,58 +248,61 @@ function connect(pipe)
   if (up != -1 && board[up].pipe != null)
   {
     // pipe has a connection above it that is included in connectedPipes
-    if (pipe.up == board[up].pipe.down) {
+    if (pipe.up == board[up].pipe.down && pipe.up != "none") {
       // connected pipe is also in the connectedPipes main list
       if (connectedPipes.includes(board[up].pipe))
       {
-        console.log("Connected up " + pipe.up + " " + board[up].pipe.down + " " + board[up].pipe.num);
+
         if (connectedPipes.includes(pipe) != true) { connectedPipes.push(pipe); }
       }
       board[up].pipe.connected.push(pipe);
       pipe.connected.push(board[up].pipe);
+      //console.log("Connected up " + pipe.num + " to " + board[up].pipe.num + " " + pipe.connected.length + " " + board[up].pipe.connected.length);
     }
   }
   if (right != -1 && board[right].pipe != null)
   {
     // pipe has a connection to the right
-    if (pipe.right == board[right].pipe.left) {
+    if (pipe.right == board[right].pipe.left && pipe.right != "none") {
       // connected pipe is also in the connectedPipes main list
       if (connectedPipes.includes(board[right].pipe))
       {
-        console.log("Connected right " + pipe.right + " " +  board[right].pipe.left + " " + board[right].pipe.num);
+
         if (connectedPipes.includes(pipe) != true) { connectedPipes.push(pipe); }
       }
       board[right].pipe.connected.push(pipe);
       pipe.connected.push(board[right].pipe);
+      //console.log("Connected right " + pipe.num + " to " + board[right].pipe.num + " " + pipe.connected.length + " " + board[right].pipe.connected.length);
 
     }
   }
   if (left != -1 && board[left].pipe != null)
   {
-    // pipe has a connection to the left that is included in connectedPipes
-    if (pipe.left == board[left].pipe.right) {
+    // pipe has a connection to the left that
+    if (pipe.left == board[left].pipe.right && pipe.left != "none") {
       // connected pipe is also in the connectedPipes main list
       if (connectedPipes.includes(board[left].pipe))
       {
-        console.log("Connected left " + pipe.left + " " + board[left].pipe.right + " " + board[left].pipe.num);
         if (connectedPipes.includes(pipe) != true) { connectedPipes.push(pipe); }
       }
       board[left].pipe.connected.push(pipe);
       pipe.connected.push(board[left].pipe);
+      //console.log("Connected left " + pipe.num + " to " + board[left].pipe.num + " " + pipe.connected.length + " " + board[left].pipe.connected.length);
     }
   }
   if (down != -1 && board[down].pipe != null)
   {
     // pipe has a connection downward that is included in connectedPipes
-    if (pipe.down == board[down].pipe.up) {
+    if (pipe.down == board[down].pipe.up && pipe.down != "none") {
       // connected pipe is also in the connectedPipes main list
       if (connectedPipes.includes(board[down].pipe))
       {
-        console.log("Connected down " + pipe.down + " " + board[down].pipe.up + " " + board[down].pipe.num);
+
         if (connectedPipes.includes(pipe) != true) { connectedPipes.push(pipe); }
       }
       board[down].pipe.connected.push(pipe);
       pipe.connected.push(board[down].pipe);
+      //console.log("Connected down " + pipe.num + " to " + board[down].pipe.num + " " + pipe.connected.length + " " + board[down].pipe.connected.length);
     }
   }
   if (connectedPipes.includes(pipe))
@@ -306,23 +312,47 @@ function connect(pipe)
       pipe.distanceFromRoot = Math.min(pipe.distanceFromRoot, pipe.connected[i].distanceFromRoot);
     }
     pipe.distanceFromRoot++;
+    expandCP(pipe);
   }
+  console.log("----------   CP   -------------");
+  for (var i = 0; i < connectedPipes.length; i++) { console.log(connectedPipes[i].num + " " + connectedPipes[i].distanceFromRoot);}
+  console.log("-------------------------------");
+}
 
-  // recursively call connect on pipes that may be connected to the pipe that was just added to the list
-  if (connectedPipes.includes(pipe))
+function printWaterWay(cP)
+{
+  waterWay = new Array();
+  var max = 0;
+  var index = 0;
+  for (var i = 0; i < cP.length; i++)
   {
-    for (var i = 0; i < pipe.connected.length; i++)
+    if (cP[i].distanceFromRoot > max)
     {
-      if (connectedPipes.includes(pipe.connected[i]) != true)
-      {
-        connectedPipes.push(pipe.connected[i]);
-        connect(pipe.connected[i]);
-      }
+      index = i;
+      max = cP[i].distanceFromRoot;
     }
   }
+  waterWay.push(cP[index]);
+  returnPath(cP[index]);
+  console.log("PRINTING WATERWAY -- count = " + waterWay.length);
+  //console.log(cP[index]);
+  for (var i2 = waterWay.length-1; i2 >= 0; i2--)
+  {
+    console.log("Num: " + waterWay[i2].num + " Distance: " + waterWay[i2].distanceFromRoot);
+  }
+  console.log("");
+}
 
-  for (var i = 0; i < connectedPipes.length; i++) { console.log(connectedPipes[i].num + " " + connectedPipes[i].distanceFromRoot);}
-  console.log("----------------------------");
+function returnPath(pipe)
+{
+  for (var i = 0; i < pipe.connected.length; i++)
+  {
+    if (pipe.connected[i].distanceFromRoot < pipe.distanceFromRoot)
+    {
+      waterWay.push(pipe.connected[i]);
+      if (pipe.connected[i].distanceFromRoot != 0) { returnPath(pipe.connected[i]); }
+    }
+  }
 }
 
 function removeElement(a, remove)
@@ -341,30 +371,41 @@ function cutConnections(pipe)
   removeElement(connectedPipes, pipe);
   for (var i =0; i < pipe.connected.length; i++)
   {
-    //console.log("Removing " + pipe.num + " from " + pipe.connected[i].num);
+    //console.log("Removing " + pipe.num + " from " + pipe.connected[i].num + " which now has a connected list length of " + pipe.connected[i].connected.length);
     removeElement(pipe.connected[i].connected, pipe);
   }
-  var root = connectedPipes[0];
+  pipe.connected = new Array();
+  //console.log("pipe connected has been cleared: " + pipe.connected.length);
+  var root = findRoot(connectedPipes);
   //console.log("Root is: " + temp.num);
   connectedPipes = new Array();
   connectedPipes.push(root);
   //console.log("Expaning from: " + temp.num);
-  console.log("Clearing CP -- Count = " + connectedPipes.length);
-  console.log(connectedPipes[0]);
+  //console.log(connectedPipes[0]);
   expandCP(root);
 }
 
 function expandCP(root)
 {
-  console.log(root);
+  //console.log("Expanding CP -- Count = " + connectedPipes.length);
+  //console.log(root);
   for (var i = 0; i < root.connected.length; i++)
   {
     if (connectedPipes.includes(root.connected[i]) != true)
     {
-      console.log("Adding - " + root.connected[i].num);
-      connectedPipes.unshift(root.connected[i]);
+      //console.log("Adding - " + root.connected[i].num);
+      root.connected[i].distanceFromRoot = root.distanceFromRoot + 1;
+      connectedPipes.push(root.connected[i]);
       expandCP(root.connected[i]);
     }
+  }
+}
+
+function findRoot(cP)
+{
+  for (var i = 0; i<cP.length; i++)
+  {
+    if (cP[i].distanceFromRoot == 0) { return cP[i]; }
   }
 }
 

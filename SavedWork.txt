@@ -1,0 +1,12 @@
+// recursively call connect on pipes that may be connected to the pipe that was just added to the list
+if (connectedPipes.includes(pipe))
+{
+  for (var i = 0; i < pipe.connected.length; i++)
+  {
+    if (connectedPipes.includes(pipe.connected[i]) != true)
+    {
+      connectedPipes.push(pipe.connected[i]);
+      connect(pipe.connected[i]);
+    }
+  }
+}
