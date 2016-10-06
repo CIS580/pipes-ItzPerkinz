@@ -17,7 +17,7 @@ function Pipe(number, X, Y)
   this.up = "none";
   this.down = "none";
   this.right = "none";
-  this.left = "left";
+  this.left = "none";
   this.connected = new Array();
   this.connections = 0;
   this.filled = false;

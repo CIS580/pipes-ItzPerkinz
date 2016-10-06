@@ -12,7 +12,7 @@ var image = new Image();
 image.src = 'assets/pipes.png';
 
 var level = 1;
-var timer = 3500;
+var timer = 0;
 var temp;
 var randNum;
 var upcomingPipes = new Array();
@@ -24,12 +24,15 @@ var start;
 var end;
 var connectedPipes = new Array();
 var waterWay = new Array();
+var watertimer = 57000;
+var gameOver = false;
+var flowing = false;
 
 // Initialize board
 var board = new Array();
 for (var i = 0; i<195; i++)
 {
-  var slot = { pipe: null, liquid: false };
+  var slot = { pipe: null };
   board[i] = slot;
 }
 
@@ -68,6 +71,7 @@ function chooseStartAndEnd()
   board[((temp.x-1)+temp.y*15)].pipe = temp;
   pipes.push(temp);
   connectedPipes.push(temp);
+  start = temp;
 
   // End
   var rand2 = Math.floor(Math.random()*17);
@@ -77,6 +81,8 @@ function chooseStartAndEnd()
   temp.y = Math.floor(Math.random()*11+1);
   board[((temp.x-1)+temp.y*15)].pipe = temp;
   pipes.push(temp);
+  end = temp;
+  updateWaterWay(connectedPipes);
 }
 
 chooseStartAndEnd();
@@ -84,57 +90,67 @@ chooseStartAndEnd();
 // Left click
 canvas.onclick = function(event) {
   event.preventDefault();
-  // From -- http://stackoverflow.com/questions/55677/how-do-i-get-the-coordinates-of-a-mouse-click-on-a-canvas-element
-    rect = canvas.getBoundingClientRect();
-    eventX = event.clientX - rect.left;
-    eventY = event.clientY - rect.top;
-  // Determine cell
-  var cellX = Math.floor(eventX/64);
-  var cellY = Math.floor(eventY/64);
-  var boardSlot = ((cellX-1)+cellY*15);
-  // TODO: Place or rotate pipe tile
-  if (board[boardSlot].pipe == null)
-    {
-      var temp1 = upcomingPipes[0];
-      temp1.x = cellX; temp1.y = cellY;
-      temp1.distanceFromRoot = 1000;
-      pipes.push(temp1);
-      upcomingPipes.shift();
-      board[boardSlot].pipe = temp1;
-      connect(temp1);
-      //console.log(temp1);
-      }
-    printWaterWay(connectedPipes);
+  if (gameOver != true)
+  {
+    // From -- http://stackoverflow.com/questions/55677/how-do-i-get-the-coordinates-of-a-mouse-click-on-a-canvas-element
+      rect = canvas.getBoundingClientRect();
+      eventX = event.clientX - rect.left;
+      eventY = event.clientY - rect.top;
+    // Determine cell
+    var cellX = Math.floor(eventX/64);
+    var cellY = Math.floor(eventY/64);
+    var boardSlot = ((cellX-1)+cellY*15);
+    // TODO: Place or rotate pipe tile
+    if (board[boardSlot].pipe == null && cellX > 0 && cellX < 16 && cellY < 14 && cellY >= 0)
+      {
+        var temp1 = upcomingPipes[0];
+        temp1.x = cellX; temp1.y = cellY;
+        temp1.distanceFromRoot = 1000;
+        pipes.push(temp1);
+        upcomingPipes.shift();
+        board[boardSlot].pipe = temp1;
+        connect(temp1);
+        //console.log(temp1);
+        }
+      updateWaterWay(connectedPipes);
+      checkForWin();
+  }
+
 }
 
 // Right click
 canvas.oncontextmenu = function(event)
 {
   event.preventDefault();
-  rect = canvas.getBoundingClientRect();
-  eventX = event.clientX - rect.left;
-  eventY = event.clientY - rect.top;
-  var cellX = Math.floor(eventX/64);
-  var cellY = Math.floor(eventY/64);
-  var boardSlot = ((cellX-1)+cellY*15);
-  if (board[boardSlot].pipe != null && board[boardSlot].pipe.start == false && board[boardSlot].pipe.end == false)
+  if (gameOver != true)
   {
-    // creating a new pipe that is the rotated version of the previous one
-    var temp2 = board[boardSlot].pipe;
-    var newPipe = rotatePipe(temp2);
-    newPipe.distanceFromRoot = 1000;
+    rect = canvas.getBoundingClientRect();
+    eventX = event.clientX - rect.left;
+    eventY = event.clientY - rect.top;
+    var cellX = Math.floor(eventX/64);
+    var cellY = Math.floor(eventY/64);
+    var boardSlot = ((cellX-1)+cellY*15);
+    if (board[boardSlot].pipe != null && board[boardSlot].pipe.start == false && board[boardSlot].pipe.end == false && board[boardSlot].filled != true)
+    {
+      // creating a new pipe that is the rotated version of the previous one
+      var temp2 = board[boardSlot].pipe;
+      var newPipe = rotatePipe(temp2);
+      newPipe.distanceFromRoot = 1000;
 
 
-    // cut connections and update the connectedPipes list
-    if (connectedPipes.includes(temp2)) {  cutConnections(temp2); }
+      // cut connections and update the connectedPipes list
+      cutConnections(temp2);
 
-    // place in new pipe
-    var index = pipes.indexOf(temp2);
-    pipes[index] = newPipe;
-    connect(newPipe);
-    board[boardSlot].pipe = newPipe;
-    printWaterWay(connectedPipes);
-    //console.log(newPipe);
+      // place in new pipe
+      var index = pipes.indexOf(temp2);
+      pipes[index] = newPipe;
+      connect(newPipe);
+      board[boardSlot].pipe = newPipe;
+      updateWaterWay(connectedPipes);
+      //console.log(newPipe);
+      checkForWin();
+  }
+
   }
 
 }
@@ -161,14 +177,24 @@ masterLoop(performance.now());
  */
 function update(elapsedTime) {
   // Updates the list of upcomingPipes.
-  timer = timer + elapsedTime+(level*5);
-  if (timer >= 3500)
+  if (gameOver != true)
   {
-    randNum = Math.floor(Math.random()*17);
-    temp = clonePipe(listofpipes[randNum]);
-    upcomingPipes.push(temp);
-    if (upcomingPipes.length > 8) { upcomingPipes.shift(); }
-    timer = 1;
+    timer = timer + elapsedTime;
+    watertimer = watertimer - elapsedTime;
+    if (watertimer <= 0 && flowing == false) { flowing = true; console.log("Flowing at " + watertimer/1000 + " seconds");}
+    // advances fluid
+    if (timer >= 3500/(1 + level*.1-.1))
+    {
+      if (flowing == true) { fillNextPipe(); }
+      // Creates more upcoming pipes
+      randNum = Math.floor(Math.random()*17);
+      temp = clonePipe(listofpipes[randNum]);
+      upcomingPipes.push(temp);
+      if (upcomingPipes.length > 8) { upcomingPipes.shift(); }
+
+      timer = 1;
+    }
+
   }
 
   // TODO: Advance the fluid
@@ -199,7 +225,15 @@ function render(elapsedTime, ctx) {
   ctx.fillRect(0, 512, 64, 5);
   ctx.font = "20px Impact";
   ctx.fillText("Level = ", 5, 539);
-  ctx.fillText(level, 20, 564);
+  ctx.fillText(level, 25, 564);
+
+  ctx.font = "15px Impact";
+  ctx.fillText("WATER IN", 5, 603);
+  var t = watertimer/1000 + 3;
+  var rounded = Math.round(t*10/10);
+  if (rounded < 0 ) { rounded = 0; }
+  ctx.font = "20px Impact";
+  ctx.fillText(rounded, 20, 630);
 
 
   // Draws the list of upcoming pipes
@@ -217,6 +251,13 @@ function render(elapsedTime, ctx) {
     if (currentPipe2.start) { ctx.fillStyle = "Green"; ctx.fillRect(currentPipe2.x*64+2, currentPipe2.y*64+2, 62, 62); }
     if (currentPipe2.end) { ctx.fillStyle = "Red"; ctx.fillRect(currentPipe2.x*64+2, currentPipe2.y*64+2, 62, 62);}
     ctx.drawImage(currentPipe2.image, currentPipe2.imageX, currentPipe2.imageY, 31, 31, currentPipe2.x*64, currentPipe2.y*64, 64, 64);
+  }
+
+  if (gameOver == true)
+  {
+    ctx.font = "30px Impact";
+    ctx.fillStyle = "White";
+    ctx.fillText("GAME OVER -- REACHED LEVEL " + level, 365, 300);
   }
 }
 
@@ -319,7 +360,7 @@ function connect(pipe)
   console.log("-------------------------------");
 }
 
-function printWaterWay(cP)
+function updateWaterWay(cP)
 {
   waterWay = new Array();
   var max = 0;
@@ -355,6 +396,7 @@ function returnPath(pipe)
   }
 }
 
+// Removes an element from an Array
 function removeElement(a, remove)
 {
   var index = a.indexOf(remove);
@@ -368,10 +410,11 @@ function removeElement(a, remove)
 function cutConnections(pipe)
 {
   //console.log("Cut " + pipe.num);
-  removeElement(connectedPipes, pipe);
+  if (connectedPipes.includes(pipe)) { removeElement(connectedPipes, pipe); }
   for (var i =0; i < pipe.connected.length; i++)
   {
-    //console.log("Removing " + pipe.num + " from " + pipe.connected[i].num + " which now has a connected list length of " + pipe.connected[i].connected.length);
+    console.log("Removing " + pipe.num + " from " + pipe.connected[i].num + " which now has a connected list length of " + pipe.connected[i].connected.length);
+    console.log(pipe.connected[i]);
     removeElement(pipe.connected[i].connected, pipe);
   }
   pipe.connected = new Array();
@@ -401,6 +444,50 @@ function expandCP(root)
   }
 }
 
+function fillNextPipe()
+{
+  console.log("Filling next pipe.")
+  for (var i = waterWay.length-1; i >= 0; i--)
+  {
+    if (waterWay[i].filled != true) {
+      waterWay[i].image.src = "assets/filledPipes.png";
+      waterWay[i].filled = true;
+      checkForLoss();
+      return;
+    }
+  }
+}
+
+// Checks to see if you have lost the level....
+function checkForLoss()
+{
+  if (waterWay[0].filled == true)
+  {
+    gameOver = true;
+    console.log("You Lose");
+  }
+}
+
+// Checks to see if you have beaten the level!
+function checkForWin()
+{
+  //console.log(end);
+  if (connectedPipes.includes(end))
+  {
+      level++;
+      timer = 1;
+      upcomingPipes = new Array();
+      pipes = new Array();
+      connectedPipes = new Array();
+      for (var i = 0; i < 195; i++) { board[i].pipe = null; }
+      watertimer = 57000 - 5000*level;
+      if (watertimer < 20000) { watertimer = 20000; }
+      flowing = false;
+      chooseStartAndEnd();
+  }
+}
+
+// Finds the root of the connectedPipes list. This is used to update the list and determine the proper waterWay
 function findRoot(cP)
 {
   for (var i = 0; i<cP.length; i++)
@@ -565,7 +652,7 @@ function Pipe(number, X, Y)
   this.up = "none";
   this.down = "none";
   this.right = "none";
-  this.left = "left";
+  this.left = "none";
   this.connected = new Array();
   this.connections = 0;
   this.filled = false;
