@@ -11,24 +11,28 @@ var game = new Game(canvas, update, render);
 var image = new Image();
 image.src = 'assets/pipes.png';
 
-var level = 1;
-var timer = 0;
-var temp;
-var randNum;
-var upcomingPipes = new Array();
-var pipes = new Array();
-var eventX;
-var eventY;
-var rect;
-var start;
-var end;
-var connectedPipes = new Array();
-var waterWay = new Array();
-var watertimer = 57000;
-var gameOver = false;
-var flowing = false;
+var level = 1;                                              // Keeps track of the player's level. Used to increase difficulty.
+var timer = 0;                                              // A timer that keeps track of the time since the last upcomingPipe addition
+var temp;                                                   // A temporary variable used throughout the game.
+var randNum;                                                // A random number that is used when choosing the next upcoming pipe.
+var upcomingPipes = new Array();                            // The list of upcoming pipes that the player can place
+var pipes = new Array();                                    // The list of pipes on the board
+var eventX;                                                 // The X cell of the mouse click
+var eventY;                                                 // The Y cell of the mouse click
+var rect;                                                   // A variable used in the mouse click event to get the bounds of the canvas
+var start;                                                  // The starting pipe
+var end;                                                    // The ending pipe
+var connectedPipes = new Array();                           // The list of pipes that are indirectly connected to the starting pipe
+var waterWay = new Array();                                 // The list of pipes that the water will go through
+var watertimer = 57000;                                     // The intial timer until the water starts flowing
+var gameOver = false;                                       // Checks if the game is over
+var flowing = false;                                        // Checks if the water is flowing
+var backgroundSong = new Audio("assets/Slow Pipes.mp3");    // The background song
+backgroundSong.loop = true;
+backgroundSong.volume = 0.2;
+backgroundSong.play();
 
-// Initialize board
+// Initialize board with slots with no pipe attached
 var board = new Array();
 for (var i = 0; i<195; i++)
 {
@@ -38,16 +42,15 @@ for (var i = 0; i<195; i++)
 
 
 // Initialize pipes
-var listofpipes = new Array();
-
-var upLarge = [1,5,10,11,12,15,18,19];
-var upSmall = [9,13];
-var rightLarge = [1,4,6,8,10,14,18,19];
-var rightSmall = [2,3];
-var leftLarge = [1,2,7,8,11,14,15,19];
-var leftSmall = [3,4];
-var downLarge = [1,6,7,12,13,14,15,18];
-var downSmall = [5,9];
+var listofpipes = new Array();                              // The list of possible pipes to pull from
+var upLarge = [1,5,10,11,12,15,18,19];                      // The list of pipe.num that will have their up value = "large"
+var upSmall = [9,13];                                       // The list of pipe.num that will have their up value = "small"
+var rightLarge = [1,4,6,8,10,14,18,19];                     // The list of pipe.num that will have their right value = "large"
+var rightSmall = [2,3];                                     // The list of pipe.num that will have their right value = "small"
+var leftLarge = [1,2,7,8,11,14,15,19];                      // The list of pipe.num that will have their left value = "large"
+var leftSmall = [3,4];                                      // The list of pipe.num that will have their left value = "small"
+var downLarge = [1,6,7,12,13,14,15,18];                     // The list of pipe.num that will have their down value = "large"
+var downSmall = [5,9];                                      // The list of pipe.num that will have their down value = "small"
 
 // Adds all 17 pipes to the list of possible pipes
 for (var x = 1; x <= 19; x++)
@@ -110,12 +113,10 @@ canvas.onclick = function(event) {
         upcomingPipes.shift();
         board[boardSlot].pipe = temp1;
         connect(temp1);
-        //console.log(temp1);
-        }
-      updateWaterWay(connectedPipes);
-      checkForWin();
+      }
+    updateWaterWay(connectedPipes);
+    checkForWin();
   }
-
 }
 
 // Right click
@@ -147,7 +148,6 @@ canvas.oncontextmenu = function(event)
       connect(newPipe);
       board[boardSlot].pipe = newPipe;
       updateWaterWay(connectedPipes);
-      //console.log(newPipe);
       checkForWin();
   }
 
@@ -181,7 +181,7 @@ function update(elapsedTime) {
   {
     timer = timer + elapsedTime;
     watertimer = watertimer - elapsedTime;
-    if (watertimer <= 0 && flowing == false) { flowing = true; console.log("Flowing at " + watertimer/1000 + " seconds");}
+    if (watertimer <= 0 && flowing == false) { flowing = true; }
     // advances fluid
     if (timer >= 3500/(1 + level*.1-.1))
     {
@@ -191,13 +191,9 @@ function update(elapsedTime) {
       temp = clonePipe(listofpipes[randNum]);
       upcomingPipes.push(temp);
       if (upcomingPipes.length > 8) { upcomingPipes.shift(); }
-
       timer = 1;
     }
-
   }
-
-  // TODO: Advance the fluid
 }
 
 /**
@@ -222,11 +218,11 @@ function render(elapsedTime, ctx) {
   {
     ctx.fillRect(64, y*64, canvas.width, 1.5);
   }
+  // Draws the level and water counter
   ctx.fillRect(0, 512, 64, 5);
   ctx.font = "20px Impact";
   ctx.fillText("Level = ", 5, 539);
   ctx.fillText(level, 25, 564);
-
   ctx.font = "15px Impact";
   ctx.fillText("WATER IN", 5, 603);
   var t = watertimer/1000 + 3;
@@ -241,7 +237,6 @@ function render(elapsedTime, ctx) {
   {
     var currentPipe = upcomingPipes[u];
     ctx.drawImage(currentPipe.image, currentPipe.imageX, currentPipe.imageY, 31, 31, 0, (upcomingPipes.length-u)*64-64, 64, 64);
-    //console.log(currentPipe.num + " " + currentPipe.up + " " + currentPipe.down + " " + currentPipe.right + " " + currentPipe.left);
   }
 
   // Draws the list of pipes on the board
@@ -253,6 +248,7 @@ function render(elapsedTime, ctx) {
     ctx.drawImage(currentPipe2.image, currentPipe2.imageX, currentPipe2.imageY, 31, 31, currentPipe2.x*64, currentPipe2.y*64, 64, 64);
   }
 
+  // Draws game over screen
   if (gameOver == true)
   {
     ctx.font = "30px Impact";
@@ -270,7 +266,6 @@ function clonePipe(pipe)
 }
 
 // looks for connections around a pipe on the grid and adds it to the list of connected pipes if need be
-// MIGHTVE FIXED THIS?
 function connect(pipe)
 {
   pipe.connected = new Array();
@@ -298,7 +293,6 @@ function connect(pipe)
       }
       board[up].pipe.connected.push(pipe);
       pipe.connected.push(board[up].pipe);
-      //console.log("Connected up " + pipe.num + " to " + board[up].pipe.num + " " + pipe.connected.length + " " + board[up].pipe.connected.length);
     }
   }
   if (right != -1 && board[right].pipe != null)
@@ -313,7 +307,6 @@ function connect(pipe)
       }
       board[right].pipe.connected.push(pipe);
       pipe.connected.push(board[right].pipe);
-      //console.log("Connected right " + pipe.num + " to " + board[right].pipe.num + " " + pipe.connected.length + " " + board[right].pipe.connected.length);
 
     }
   }
@@ -328,7 +321,6 @@ function connect(pipe)
       }
       board[left].pipe.connected.push(pipe);
       pipe.connected.push(board[left].pipe);
-      //console.log("Connected left " + pipe.num + " to " + board[left].pipe.num + " " + pipe.connected.length + " " + board[left].pipe.connected.length);
     }
   }
   if (down != -1 && board[down].pipe != null)
@@ -343,7 +335,6 @@ function connect(pipe)
       }
       board[down].pipe.connected.push(pipe);
       pipe.connected.push(board[down].pipe);
-      //console.log("Connected down " + pipe.num + " to " + board[down].pipe.num + " " + pipe.connected.length + " " + board[down].pipe.connected.length);
     }
   }
   if (connectedPipes.includes(pipe))
@@ -355,11 +346,9 @@ function connect(pipe)
     pipe.distanceFromRoot++;
     expandCP(pipe);
   }
-  console.log("----------   CP   -------------");
-  for (var i = 0; i < connectedPipes.length; i++) { console.log(connectedPipes[i].num + " " + connectedPipes[i].distanceFromRoot);}
-  console.log("-------------------------------");
 }
 
+// Updates the water way from the root
 function updateWaterWay(cP)
 {
   waterWay = new Array();
@@ -375,15 +364,9 @@ function updateWaterWay(cP)
   }
   waterWay.push(cP[index]);
   returnPath(cP[index]);
-  console.log("PRINTING WATERWAY -- count = " + waterWay.length);
-  //console.log(cP[index]);
-  for (var i2 = waterWay.length-1; i2 >= 0; i2--)
-  {
-    console.log("Num: " + waterWay[i2].num + " Distance: " + waterWay[i2].distanceFromRoot);
-  }
-  console.log("");
 }
 
+// Returns the patch to the root
 function returnPath(pipe)
 {
   for (var i = 0; i < pipe.connected.length; i++)
@@ -409,34 +392,25 @@ function removeElement(a, remove)
 // should theoretically take a pipe and cut all pipes that branch out from this pipe away from the connectedPipes list.
 function cutConnections(pipe)
 {
-  //console.log("Cut " + pipe.num);
   if (connectedPipes.includes(pipe)) { removeElement(connectedPipes, pipe); }
   for (var i =0; i < pipe.connected.length; i++)
   {
-    console.log("Removing " + pipe.num + " from " + pipe.connected[i].num + " which now has a connected list length of " + pipe.connected[i].connected.length);
-    console.log(pipe.connected[i]);
     removeElement(pipe.connected[i].connected, pipe);
   }
   pipe.connected = new Array();
-  //console.log("pipe connected has been cleared: " + pipe.connected.length);
   var root = findRoot(connectedPipes);
-  //console.log("Root is: " + temp.num);
   connectedPipes = new Array();
   connectedPipes.push(root);
-  //console.log("Expaning from: " + temp.num);
-  //console.log(connectedPipes[0]);
   expandCP(root);
 }
 
+// expands the connectedPipes list from the root
 function expandCP(root)
 {
-  //console.log("Expanding CP -- Count = " + connectedPipes.length);
-  //console.log(root);
   for (var i = 0; i < root.connected.length; i++)
   {
     if (connectedPipes.includes(root.connected[i]) != true)
     {
-      //console.log("Adding - " + root.connected[i].num);
       root.connected[i].distanceFromRoot = root.distanceFromRoot + 1;
       connectedPipes.push(root.connected[i]);
       expandCP(root.connected[i]);
@@ -444,9 +418,9 @@ function expandCP(root)
   }
 }
 
+// Fills the next pipe in waterWay
 function fillNextPipe()
 {
-  console.log("Filling next pipe.")
   for (var i = waterWay.length-1; i >= 0; i--)
   {
     if (waterWay[i].filled != true) {
@@ -464,14 +438,12 @@ function checkForLoss()
   if (waterWay[0].filled == true)
   {
     gameOver = true;
-    console.log("You Lose");
   }
 }
 
 // Checks to see if you have beaten the level!
 function checkForWin()
 {
-  //console.log(end);
   if (connectedPipes.includes(end))
   {
       level++;
