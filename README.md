@@ -47,5 +47,8 @@ The bundle will automatically be re-created every time you change a source file.
 Pipe tiles by surt, and released into the public domain on [OpenGameArt.com](http://opengameart.org/content/plums)
 filledPipes.png is just pipes.png that I edited with Paint
 SlowPipes.mp3 is from RawGames @ opengameart.org under a Public Domain CC0 license
+Place.wav and Win.wav come from ViRix @ opengameart.org under a CC-BY 3.0 license
+Lose.wav comes from remaxim @ opengameart.org under a CC-BY-SA 3.0 license
+Rotate.wav comes from Bart K. @ opengameart.org under a CC-BY 3.0 license
 
 Game framework HTML5/CSS3/Javascirpt code was written by course instructor [Nathan Bean](http://nathanhbean.com), and also released under the [CC-A-SA 3.0 License](https://creativecommons.org/licenses/by-sa/3.0/)

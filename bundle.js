@@ -28,9 +28,17 @@ var watertimer = 57000;                                     // The intial timer 
 var gameOver = false;                                       // Checks if the game is over
 var flowing = false;                                        // Checks if the water is flowing
 var backgroundSong = new Audio("assets/Slow Pipes.mp3");    // The background song
-backgroundSong.loop = true;
-backgroundSong.volume = 0.2;
-backgroundSong.play();
+  backgroundSong.loop = true;
+  backgroundSong.volume = 0.1;
+  backgroundSong.play();
+var rotate = new Audio("assets/Rotate.wav");                // Rotate sound
+  rotate.volume = 0.2;
+var win = new Audio("assets/Win.wav");                      // Win sound
+  win.volume = 0.2;
+var lose = new Audio("assets/Lose.wav");                    // Lose sound
+  lose.volume = 0.6;
+var place = new Audio("assets/Place.wav");                  // Place sound
+  place.volume = 0.1;
 
 // Initialize board with slots with no pipe attached
 var board = new Array();
@@ -106,6 +114,7 @@ canvas.onclick = function(event) {
     // TODO: Place or rotate pipe tile
     if (board[boardSlot].pipe == null && cellX > 0 && cellX < 16 && cellY < 14 && cellY >= 0)
       {
+        place.play();
         var temp1 = upcomingPipes[0];
         temp1.x = cellX; temp1.y = cellY;
         temp1.distanceFromRoot = 1000;
@@ -122,6 +131,7 @@ canvas.onclick = function(event) {
 // Right click
 canvas.oncontextmenu = function(event)
 {
+
   event.preventDefault();
   if (gameOver != true)
   {
@@ -131,13 +141,14 @@ canvas.oncontextmenu = function(event)
     var cellX = Math.floor(eventX/64);
     var cellY = Math.floor(eventY/64);
     var boardSlot = ((cellX-1)+cellY*15);
+
     if (board[boardSlot].pipe != null && board[boardSlot].pipe.start == false && board[boardSlot].pipe.end == false && board[boardSlot].filled != true)
     {
+
       // creating a new pipe that is the rotated version of the previous one
       var temp2 = board[boardSlot].pipe;
       var newPipe = rotatePipe(temp2);
       newPipe.distanceFromRoot = 1000;
-
 
       // cut connections and update the connectedPipes list
       cutConnections(temp2);
@@ -148,6 +159,7 @@ canvas.oncontextmenu = function(event)
       connect(newPipe);
       board[boardSlot].pipe = newPipe;
       updateWaterWay(connectedPipes);
+      rotate.play();
       checkForWin();
   }
 
@@ -438,6 +450,7 @@ function checkForLoss()
   if (waterWay[0].filled == true)
   {
     gameOver = true;
+    lose.play();
   }
 }
 
@@ -455,6 +468,7 @@ function checkForWin()
       watertimer = 57000 - 5000*level;
       if (watertimer < 20000) { watertimer = 20000; }
       flowing = false;
+      win.play();
       chooseStartAndEnd();
   }
 }
