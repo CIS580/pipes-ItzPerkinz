@@ -23,7 +23,7 @@ var start;                                                  // The starting pipe
 var end;                                                    // The ending pipe
 var connectedPipes = new Array();                           // The list of pipes that are indirectly connected to the starting pipe
 var waterWay = new Array();                                 // The list of pipes that the water will go through
-var watertimer = 57000;                                     // The intial timer until the water starts flowing
+var watertimer = 45000;                                     // The intial timer until the water starts flowing
 var gameOver = false;                                       // Checks if the game is over
 var flowing = false;                                        // Checks if the water is flowing
 var backgroundSong = new Audio("assets/Slow Pipes.mp3");    // The background song
@@ -38,6 +38,8 @@ var lose = new Audio("assets/Lose.wav");                    // Lose sound
   lose.volume = 0.6;
 var place = new Audio("assets/Place.wav");                  // Place sound
   place.volume = 0.1;
+
+var timer2 = 0;
 
 // Initialize board with slots with no pipe attached
 var board = new Array();
@@ -76,8 +78,8 @@ function chooseStartAndEnd()
   var rand1 = Math.floor(Math.random()*17);
   temp = clonePipe(listofpipes[rand1]);
   temp.start = true;
-  temp.x = Math.floor(Math.random()*2+2);
-  temp.y = Math.floor(Math.random()*11+1);
+  temp.x = Math.floor(Math.random()*2+3);
+  temp.y = Math.floor(Math.random()*10+2);
   board[((temp.x-1)+temp.y*15)].pipe = temp;
   pipes.push(temp);
   connectedPipes.push(temp);
@@ -87,8 +89,8 @@ function chooseStartAndEnd()
   var rand2 = Math.floor(Math.random()*17);
   temp = clonePipe(listofpipes[rand2]);
   temp.end = true;
-  temp.x = Math.floor(Math.random()*2+13);
-  temp.y = Math.floor(Math.random()*11+1);
+  temp.x = Math.floor(Math.random()*2+12);
+  temp.y = Math.floor(Math.random()*10+2);
   board[((temp.x-1)+temp.y*15)].pipe = temp;
   pipes.push(temp);
   end = temp;
@@ -191,18 +193,26 @@ function update(elapsedTime) {
   if (gameOver != true)
   {
     timer = timer + elapsedTime;
+    timer2 = timer2 + elapsedTime;
     watertimer = watertimer - elapsedTime;
     if (watertimer <= 0 && flowing == false) { flowing = true; }
     // advances fluid
-    if (timer >= 3500/(1 + level*.1-.1))
+    if (timer >= 3500/(1 + level*.5))
     {
-      if (flowing == true) { fillNextPipe(); }
+      if (timer2 >= 3500/(1+level*.1))
+      {
+        if (flowing == true) { fillNextPipe(); timer2 = 1; }
+      }
       // Creates more upcoming pipes
-      randNum = Math.floor(Math.random()*17);
-      temp = clonePipe(listofpipes[randNum]);
-      upcomingPipes.push(temp);
-      if (upcomingPipes.length > 8) { upcomingPipes.shift(); }
-      timer = 1;
+      if (upcomingPipes.length < 8)
+      {
+        randNum = Math.floor(Math.random()*17);
+        temp = clonePipe(listofpipes[randNum]);
+        upcomingPipes.push(temp);
+        timer = 1;
+      }
+
+      //if (upcomingPipes.length > 8) { upcomingPipes.shift(); }
     }
   }
 }
@@ -236,7 +246,7 @@ function render(elapsedTime, ctx) {
   ctx.fillText(level, 25, 564);
   ctx.font = "15px Impact";
   ctx.fillText("WATER IN", 5, 603);
-  var t = watertimer/1000 + 3;
+  var t = watertimer/1000;
   var rounded = Math.round(t*10/10);
   if (rounded < 0 ) { rounded = 0; }
   ctx.font = "20px Impact";
@@ -465,7 +475,7 @@ function checkForWin()
       connectedPipes = new Array();
       for (var i = 0; i < 195; i++) { board[i].pipe = null; }
       watertimer = 57000 - 5000*level;
-      if (watertimer < 20000) { watertimer = 20000; }
+      if (watertimer < 10000) { watertimer = 10000; }
       flowing = false;
       win.play();
       chooseStartAndEnd();
